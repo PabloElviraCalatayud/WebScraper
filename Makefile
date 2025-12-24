@@ -1,35 +1,29 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -Isrc -Itests/unity
-CFLAGS += -D_POSIX_C_SOURCE=200809L
+CFLAGS = -Wall -Wextra -std=c11
 
 SRC_DIR = src
 TEST_DIR = tests
 UNITY_DIR = tests/unity
 
-SRC_FILES = \
-  $(SRC_DIR)/tokenizer.c \
-  $(SRC_DIR)/main.c
+APP_SRC = \
+	$(SRC_DIR)/main.c \
+	$(SRC_DIR)/tokenizer/tokenizer.c
 
-TEST_FILES = \
-  $(TEST_DIR)/test_tokenizer.c \
-  $(SRC_DIR)/tokenizer.c \
-  $(UNITY_DIR)/unity.c
+TEST_SRC = \
+	$(TEST_DIR)/test_tokenizer.c \
+	$(SRC_DIR)/tokenizer/tokenizer.c \
+	$(UNITY_DIR)/src/unity.c
 
-APP = app
-TEST_APP = test_tokenizer
+INCLUDES = \
+	-I$(SRC_DIR) \
+	-I$(SRC_DIR)/tokenizer \
+	-I$(UNITY_DIR)/src
 
-.PHONY: all clean test
+app:
+	$(CC) $(CFLAGS) $(INCLUDES) $(APP_SRC) -o app
 
-all: $(APP)
-
-$(APP): $(SRC_FILES)
-	$(CC) $(CFLAGS) $^ -o $@
-
-test: $(TEST_APP)
-	./$(TEST_APP)
-
-$(TEST_APP): $(TEST_FILES)
-	$(CC) $(CFLAGS) $^ -o $@
+test:
+	$(CC) $(CFLAGS) $(INCLUDES) $(TEST_SRC) -o test_tokenizer
 
 clean:
-	rm -f $(APP) $(TEST_APP)
+	rm -f app test_tokenizer

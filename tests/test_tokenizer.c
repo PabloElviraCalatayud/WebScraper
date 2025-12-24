@@ -1,5 +1,5 @@
 #include "unity.h"
-#include "../src/tokenizer.h"
+#include "tokenizer.h"
 
 void setUp(void) {}
 void tearDown(void) {}

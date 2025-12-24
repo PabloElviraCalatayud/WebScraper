@@ -3,10 +3,19 @@
 #include <ctype.h>
 #include "tokenizer.h"
 
+static char *strdup_safe(const char *s) {
+    size_t len = strlen(s) + 1;
+    char *copy = malloc(len);
+    if(copy){
+        memcpy(copy, s, len);
+    }
+    return copy;
+}
+
 static Token *create_token(TokenType type, const char *value) {
     Token *token = malloc(sizeof(Token));
     token->type = type;
-    token->value = value ? strdup(value) : NULL;
+    token->value = value ? strdup_safe(value) : NULL;
     token->next = NULL;
 
     return token;
