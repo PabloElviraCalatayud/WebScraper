@@ -1,6 +1,6 @@
 CC      := gcc
 CFLAGS  := -Wall -Wextra -std=c11
-LIBS := -lcurl
+LIBS := -lcurl -lxml2
 
 # =====================
 # Include paths
@@ -28,6 +28,7 @@ COMMON_SRCS := \
   src/pubmed/pubmed_fetch.c \
   src/pubmed/pubmed_xml_parser.c \
   src/csv/csv_writer.c \
+  src/utils/csv_to_json.c \
   src/utils/utils.c
 
 # =====================

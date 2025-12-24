@@ -13,6 +13,7 @@
 
 #include "csv_writer.h"
 #include "utils.h"
+#include "csv_to_json.h"
 
 #define MIN_ARGC 4
 #define HELP "<query> <file-name.csv> <repo_1> <repo_N>"
@@ -127,5 +128,25 @@ int main(int argc, char *argv[]) {
 
   free_tokens(tokens);
   fclose(fout);
+
+  /* ============================
+   * CSV → JSON conversion
+   * ============================ */
+
+  char json_path[1024];
+  strncpy(json_path, argv[2], sizeof(json_path) - 1);
+  json_path[sizeof(json_path) - 1] = '\0';
+
+  char *dot = strrchr(json_path, '.');
+  if (dot) {
+    strcpy(dot, ".json");
+  }
+
+  if (csv_to_json(argv[2], json_path) == 0) {
+    printf("JSON generated: %s\n", json_path);
+  } else {
+    printf("Warning: failed to generate JSON\n");
+  }
+
   return 0;
 }
