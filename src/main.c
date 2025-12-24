@@ -1,36 +1,45 @@
 #include <stdio.h>
+#include <string.h>
+#include "repository_parser.h"
 #include "tokenizer.h"
 
+#define MIN_ARGC 4
+#define HELP "<query><file-name.csv><repo_1><repo_N>"
+#define SUPPORTED_REPOS "PubMed"
+
 int main(int argc, char *argv[]) {
-  if (argc < 2) {
-    printf("Error not enough arguments, expected UQL_string\n");
+  if (argc < MIN_ARGC) {
+    printf("Missing parameters: %s\n" HELP);
+    printf("Supported repositories: %s\n", SUPPORTED_REPOS);
     return -1;
   }
 
-  Token *tokens = tokenize(argv[1]);
-  Token *current = tokens;
-
-  while (current) {
-    switch (current->type) {
-      case TOKEN_TERM:
-        printf("TOKEN_TERM (%s)\n", current->value);
-        break;
-      case TOKEN_AND:
-        printf("TOKEN_AND\n");
-        break;
-      case TOKEN_OR:
-        printf("TOKEN_OR\n");
-        break;
-      case TOKEN_LEFT_PAREN:
-        printf("TOKEN_LEFT_PAREN\n");
-        break;
-      case TOKEN_RIGHT_PAREN:
-        printf("TOKEN_RIGHT_PAREN\n");
-        break;
-    }
-    current = current->next;
+  const char *ext = strrchr(argv[2], '.');
+  if (!ext || strcmp(ext, ".csv") != 0) {
+    printf("Output file must be .csv\n");
+    return -2;
   }
 
+  FILE *fout;
+  if (!(fout = fopen(argv[2], "w"))) {
+    perror("Error while opening output file");
+    return -3;
+  }
+
+  for(int i = 3; i < argc; i++){
+    Repository repo = parse_repository(argv[i]);
+
+    if (repo == REPO_UNKNOWN) {
+      printf("Unknown repository %s\n", argv[i]);
+      continue;
+    }
+
+    printf("Processing repository: %s\n", repo_name(repo));
+  }
+
+  Token *tokens = tokenize(argv[1]);
+
   free_tokens(tokens);
+  fclose(fout);
   return 0;
 }
