@@ -1,29 +1,54 @@
-CC = gcc
-CFLAGS = -Wall -Wextra -std=c11
+CC      := gcc
+CFLAGS  := -Wall -Wextra -std=c11
 
-SRC_DIR = src
-TEST_DIR = tests
-UNITY_DIR = tests/unity
+# Include paths
+INCLUDES := \
+  -Isrc \
+  -Isrc/tokenizer \
+  -Isrc/repository \
+  -Itests/unity/src
 
-APP_SRC = \
-	$(SRC_DIR)/main.c \
-	$(SRC_DIR)/tokenizer/tokenizer.c
+# =====================
+# Application
+# =====================
 
-TEST_SRC = \
-	$(TEST_DIR)/test_tokenizer.c \
-	$(SRC_DIR)/tokenizer/tokenizer.c \
-	$(UNITY_DIR)/src/unity.c
+APP_NAME := app
 
-INCLUDES = \
-	-I$(SRC_DIR) \
-	-I$(SRC_DIR)/tokenizer \
-	-I$(UNITY_DIR)/src
+APP_SRCS := \
+  src/main.c \
+  src/tokenizer/tokenizer.c \
+  src/repository/repository_parser.c
 
-app:
-	$(CC) $(CFLAGS) $(INCLUDES) $(APP_SRC) -o app
+# =====================
+# Tests
+# =====================
 
-test:
-	$(CC) $(CFLAGS) $(INCLUDES) $(TEST_SRC) -o test_tokenizer
+TEST_NAME := test_runner
+
+TEST_SRCS := \
+  tests/test_main.c \
+  tests/test_tokenizer.c \
+  tests/test_repository_parser.c \
+  src/tokenizer/tokenizer.c \
+  src/repository/repository_parser.c \
+  tests/unity/src/unity.c
+
+# =====================
+# Rules
+# =====================
+
+.PHONY: all clean test
+
+all: $(APP_NAME)
+
+$(APP_NAME):
+	$(CC) $(CFLAGS) $(INCLUDES) $(APP_SRCS) -o $(APP_NAME)
+
+test: $(TEST_NAME)
+	./$(TEST_NAME)
+
+$(TEST_NAME):
+	$(CC) $(CFLAGS) $(INCLUDES) $(TEST_SRCS) -o $(TEST_NAME)
 
 clean:
-	rm -f app test_tokenizer
+	rm -f $(APP_NAME) $(TEST_NAME)
