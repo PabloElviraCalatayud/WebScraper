@@ -2,15 +2,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "tokenizer.h"
-
-static char *strdup_safe(const char *s) {
-    size_t len = strlen(s) + 1;
-    char *copy = malloc(len);
-    if(copy){
-        memcpy(copy, s, len);
-    }
-    return copy;
-}
+#include "../utils/utils.h"
 
 static Token *create_token(TokenType type, const char *value) {
     Token *token = malloc(sizeof(Token));

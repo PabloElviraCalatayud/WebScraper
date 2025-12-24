@@ -3,12 +3,19 @@
     {
       "name": "Linux",
       "includePath": [
-        "${workspaceFolder}/**",
-        "/usr/include",
-        "/usr/include/libxml2"
+        "${workspaceFolder}/src",
+        "${workspaceFolder}/src/tokenizer",
+        "${workspaceFolder}/src/repository",
+        "${workspaceFolder}/src/translator",
+        "${workspaceFolder}/src/utils",
+        "${workspaceFolder}/src/pubmed",
+        "${workspaceFolder}/tests/unity/src"
       ],
+      "defines": [],
       "compilerPath": "/usr/bin/gcc",
-      "cStandard": "c17"
+      "cStandard": "c11",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "linux-gcc-x64"
     }
   ],
   "version": 4

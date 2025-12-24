@@ -1,12 +1,30 @@
 CC      := gcc
 CFLAGS  := -Wall -Wextra -std=c11
+LIBS := -lcurl
 
+# =====================
 # Include paths
+# =====================
+
 INCLUDES := \
   -Isrc \
   -Isrc/tokenizer \
   -Isrc/repository \
+  -Isrc/translator \
+  -Isrc/utils \
+  -Isrc/pubmed \
   -Itests/unity/src
+
+# =====================
+# Common sources (NO main)
+# =====================
+
+COMMON_SRCS := \
+  src/tokenizer/tokenizer.c \
+  src/repository/repository_parser.c \
+  src/translator/translator.c \
+  src/pubmed/pubmed_url.c \
+  src/utils/utils.c
 
 # =====================
 # Application
@@ -16,8 +34,7 @@ APP_NAME := app
 
 APP_SRCS := \
   src/main.c \
-  src/tokenizer/tokenizer.c \
-  src/repository/repository_parser.c
+  $(COMMON_SRCS)
 
 # =====================
 # Tests
@@ -29,8 +46,9 @@ TEST_SRCS := \
   tests/test_main.c \
   tests/test_tokenizer.c \
   tests/test_repository_parser.c \
-  src/tokenizer/tokenizer.c \
-  src/repository/repository_parser.c \
+  tests/test_translator.c \
+  tests/test_pubmed_url.c \
+  $(COMMON_SRCS) \
   tests/unity/src/unity.c
 
 # =====================
@@ -42,13 +60,13 @@ TEST_SRCS := \
 all: $(APP_NAME)
 
 $(APP_NAME):
-	$(CC) $(CFLAGS) $(INCLUDES) $(APP_SRCS) -o $(APP_NAME)
+	$(CC) $(CFLAGS) $(INCLUDES) $(APP_SRCS) -o $(APP_NAME) $(LIBS)
 
 test: $(TEST_NAME)
 	./$(TEST_NAME)
 
 $(TEST_NAME):
-	$(CC) $(CFLAGS) $(INCLUDES) $(TEST_SRCS) -o $(TEST_NAME)
+	$(CC) $(CFLAGS) $(INCLUDES) $(TEST_SRCS) -o $(TEST_NAME) $(LIBS)
 
 clean:
 	rm -f $(APP_NAME) $(TEST_NAME)
