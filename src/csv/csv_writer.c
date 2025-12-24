@@ -1,4 +1,5 @@
 #include "csv_writer.h"
+#include "pubmed_types.h"
 #include <string.h>
 
 /* Escapa comillas dobles para CSV */
@@ -24,11 +25,7 @@ void csv_write_header(FILE *f) {
   );
 }
 
-void csv_write_article(
-  FILE *f,
-  const char *repository,
-  const PubMedArticle *article
-) {
+void csv_write_article(FILE *f,const char *repository,const PubMedArticle *article) {
   csv_escape_and_write(f, repository);
   fputc(',', f);
 

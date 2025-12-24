@@ -5,7 +5,13 @@
 #include "repository_parser.h"
 #include "tokenizer.h"
 #include "translator.h"
+
 #include "pubmed_url.h"
+#include "pubmed_fetch.h"
+#include "pubmed_xml_parser.h"
+#include "pubmed_types.h"
+
+#include "csv_writer.h"
 #include "utils.h"
 
 #define MIN_ARGC 4
@@ -14,7 +20,6 @@
 
 #define PUBMED_PAGE_SIZE 20
 #define PUBMED_PAGES     2
-
 
 int main(int argc, char *argv[]) {
   if (argc < MIN_ARGC) {
@@ -35,6 +40,8 @@ int main(int argc, char *argv[]) {
     return -3;
   }
 
+  csv_write_header(fout);
+
   Token *tokens = tokenize(argv[1]);
   if (!tokens) {
     fclose(fout);
@@ -49,20 +56,69 @@ int main(int argc, char *argv[]) {
       continue;
     }
 
+    printf("Processing repository: %s\n", repo_name(repo));
+
     QueryNode *query = translate_uql_to_pubmed(tokens);
     char *query_str = query_to_string(query);
+
     for (int page = 0; page < PUBMED_PAGES; page++) {
+      printf("Page %d\n", page);
+
       int retstart = page * PUBMED_PAGE_SIZE;
 
-      char *url = pubmed_build_search_url(query_str, retstart, PUBMED_PAGE_SIZE);
-
-      HttpBuffer response;
-      if (http_get(url, &response) == 0) {
-        printf("Page %d response:\n%s\n", page + 1, response.data);
-        http_buffer_free(&response);
+      char *search_url = pubmed_build_search_url(query_str, retstart, PUBMED_PAGE_SIZE);
+      if (!search_url) {
+        continue;
       }
 
-      free(url);
+      HttpBuffer search_response;
+      if (http_get(search_url, &search_response) != 0) {
+        free(search_url);
+        continue;
+      }
+
+      char **pmids = NULL;
+      int pmid_count = 0;
+
+      if (pubmed_parse_idlist(search_response.data, &pmids, &pmid_count) != 0 || pmid_count == 0) {
+        printf("No PMIDs found\n");
+        http_buffer_free(&search_response);
+        free(search_url);
+        continue;
+      }
+
+      printf("PMIDs: %d\n", pmid_count);
+
+      http_buffer_free(&search_response);
+      free(search_url);
+
+      char *efetch_url = pubmed_build_efetch_url((const char **)pmids, pmid_count);
+      if (!efetch_url) {
+        pubmed_free_pmids(pmids, pmid_count);
+        continue;
+      }
+
+      HttpBuffer efetch_response;
+      if (http_get(efetch_url, &efetch_response) != 0) {
+        pubmed_free_pmids(pmids, pmid_count);
+        free(efetch_url);
+        continue;
+      }
+
+      PubMedArticle *articles = NULL;
+      int article_count = 0;
+
+      if (pubmed_parse_efetch_xml(efetch_response.data, &articles, &article_count) == 0) {
+        printf("Articles parsed: %d\n", article_count);
+        for (int j = 0; j < article_count; j++) {
+          csv_write_article(fout, repo_name(repo), &articles[j]);
+        }
+      }
+
+      pubmed_free_articles(articles, article_count);
+      pubmed_free_pmids(pmids, pmid_count);
+      http_buffer_free(&efetch_response);
+      free(efetch_url);
     }
 
     free(query_str);

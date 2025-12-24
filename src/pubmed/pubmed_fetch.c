@@ -1,5 +1,6 @@
 #include "pubmed_fetch.h"
 #include "pubmed_url.h"
+#include "pubmed_types.h"
 #include "utils.h"
 
 #include <stdlib.h>

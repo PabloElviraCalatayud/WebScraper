@@ -13,6 +13,7 @@ INCLUDES := \
   -Isrc/translator \
   -Isrc/utils \
   -Isrc/pubmed \
+  -Isrc/csv \
   -Itests/unity/src
 
 # =====================
@@ -25,6 +26,8 @@ COMMON_SRCS := \
   src/translator/translator.c \
   src/pubmed/pubmed_url.c \
   src/pubmed/pubmed_fetch.c \
+  src/pubmed/pubmed_xml_parser.c \
+  src/csv/csv_writer.c \
   src/utils/utils.c
 
 # =====================
@@ -50,6 +53,7 @@ TEST_SRCS := \
   tests/test_translator.c \
   tests/test_pubmed_url.c \
   tests/test_pubmed_fetch.c \
+  tests/test_pubmed_xml_parser.c \
   $(COMMON_SRCS) \
   tests/unity/src/unity.c
 

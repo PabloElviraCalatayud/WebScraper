@@ -9,6 +9,7 @@
         "${workspaceFolder}/src/translator",
         "${workspaceFolder}/src/utils",
         "${workspaceFolder}/src/pubmed",
+        "${workspaceFolder}/src/csv",
         "${workspaceFolder}/tests/unity/src"
       ],
       "defines": [],

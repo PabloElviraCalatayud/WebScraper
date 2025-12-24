@@ -27,6 +27,10 @@ void test_pubmed_parse_idlist_basic(void);
 void test_pubmed_parse_idlist_empty(void);
 void test_pubmed_parse_idlist_missing_idlist(void);
 
+void test_parse_single_article(void);
+void test_parse_multiple_articles(void);
+void test_parse_missing_optional_fields(void);
+void test_parse_no_articles(void);
 
 /* Hooks globales */
 void setUp(void) {}
@@ -66,7 +70,11 @@ int main(void) {
   RUN_TEST(test_pubmed_parse_idlist_empty);
   RUN_TEST(test_pubmed_parse_idlist_missing_idlist);
 
-
+  printf("\n-----------------XML PARSER-----------------\n");
+  RUN_TEST(test_parse_single_article);
+  RUN_TEST(test_parse_multiple_articles);
+  RUN_TEST(test_parse_missing_optional_fields);
+  RUN_TEST(test_parse_no_articles);
 
   return UNITY_END();
 }
