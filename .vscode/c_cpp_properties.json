@@ -1,0 +1,15 @@
+{
+  "configurations": [
+    {
+      "name": "Linux",
+      "includePath": [
+        "${workspaceFolder}/**",
+        "/usr/include",
+        "/usr/include/libxml2"
+      ],
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "c17"
+    }
+  ],
+  "version": 4
+}
