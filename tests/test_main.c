@@ -18,11 +18,14 @@ void test_translate_or_operator(void);
 void test_translate_parentheses(void) ;
 void test_translate_complex_query(void);
 
-void test_pubmed_url_simple_query(void);
-void test_pubmed_url_with_spaces(void);
-void test_pubmed_url_with_operators(void);
-void test_pubmed_url_with_parentheses(void);
-void test_pubmed_url_null_query(void);
+void test_pubmed_build_search_url_basic(void);
+void test_pubmed_build_search_url_second_page(void);
+void test_pubmed_build_efetch_url_single_pmid(void);
+void test_pubmed_build_efetch_url_multiple_pmids(void);
+
+void test_pubmed_parse_idlist_basic(void);
+void test_pubmed_parse_idlist_empty(void);
+void test_pubmed_parse_idlist_missing_idlist(void);
 
 
 /* Hooks globales */
@@ -52,12 +55,17 @@ int main(void) {
   RUN_TEST(test_translate_parentheses);
   RUN_TEST(test_translate_complex_query);
 
-  printf("\n-----------------PUBMED URL----------------\n");
-  RUN_TEST(test_pubmed_url_simple_query);
-  RUN_TEST(test_pubmed_url_with_spaces);
-  RUN_TEST(test_pubmed_url_with_operators);
-  RUN_TEST(test_pubmed_url_with_parentheses);
-  RUN_TEST(test_pubmed_url_null_query);
+  printf("\n-----------------PUBMED URL TEST-----------------\n");
+  RUN_TEST(test_pubmed_build_search_url_basic);
+  RUN_TEST(test_pubmed_build_search_url_second_page);
+  RUN_TEST(test_pubmed_build_efetch_url_single_pmid);
+  RUN_TEST(test_pubmed_build_efetch_url_multiple_pmids);
+
+  printf("\n-----------------PUBMED FETCH TEST-----------------\n");
+  RUN_TEST(test_pubmed_parse_idlist_basic);
+  RUN_TEST(test_pubmed_parse_idlist_empty);
+  RUN_TEST(test_pubmed_parse_idlist_missing_idlist);
+
 
 
   return UNITY_END();

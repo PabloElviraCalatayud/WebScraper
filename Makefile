@@ -24,6 +24,7 @@ COMMON_SRCS := \
   src/repository/repository_parser.c \
   src/translator/translator.c \
   src/pubmed/pubmed_url.c \
+  src/pubmed/pubmed_fetch.c \
   src/utils/utils.c
 
 # =====================
@@ -48,6 +49,7 @@ TEST_SRCS := \
   tests/test_repository_parser.c \
   tests/test_translator.c \
   tests/test_pubmed_url.c \
+  tests/test_pubmed_fetch.c \
   $(COMMON_SRCS) \
   tests/unity/src/unity.c
 

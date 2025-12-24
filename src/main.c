@@ -12,6 +12,10 @@
 #define HELP "<query> <file-name.csv> <repo_1> <repo_N>"
 #define SUPPORTED_REPOS "PubMed"
 
+#define PUBMED_PAGE_SIZE 20
+#define PUBMED_PAGES     2
+
+
 int main(int argc, char *argv[]) {
   if (argc < MIN_ARGC) {
     printf("Missing parameters: %s\n", HELP);
@@ -47,15 +51,20 @@ int main(int argc, char *argv[]) {
 
     QueryNode *query = translate_uql_to_pubmed(tokens);
     char *query_str = query_to_string(query);
-    char *url = pubmed_build_search_url(query_str, 0, 20);
+    for (int page = 0; page < PUBMED_PAGES; page++) {
+      int retstart = page * PUBMED_PAGE_SIZE;
 
-    HttpBuffer response;
-    if (http_get(url, &response) == 0) {
-      fprintf(fout, "%s\n", response.data);
-      http_buffer_free(&response);
+      char *url = pubmed_build_search_url(query_str, retstart, PUBMED_PAGE_SIZE);
+
+      HttpBuffer response;
+      if (http_get(url, &response) == 0) {
+        printf("Page %d response:\n%s\n", page + 1, response.data);
+        http_buffer_free(&response);
+      }
+
+      free(url);
     }
 
-    free(url);
     free(query_str);
     free_query(query);
   }
