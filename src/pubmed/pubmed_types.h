@@ -6,6 +6,7 @@ typedef struct {
   char *authors;
   char *abstract;
   char *doi;
+  char *pmcid;
 } PubMedArticle;
 
 #endif

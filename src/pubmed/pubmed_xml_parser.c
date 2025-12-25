@@ -31,10 +31,6 @@ static char *extract_tag(const char *xml, const char *tag) {
 
   size_t len = end - start;
   char *out = malloc(len + 1);
-  if (!out) {
-    return NULL;
-  }
-
   memcpy(out, start, len);
   out[len] = '\0';
   return out;
@@ -58,13 +54,32 @@ static char *extract_doi(const char *xml) {
 
   size_t len = end - start;
   char *doi = malloc(len + 1);
-  if (!doi) {
-    return NULL;
-  }
-
   memcpy(doi, start, len);
   doi[len] = '\0';
   return doi;
+}
+
+static char *extract_pmcid(const char *xml) {
+  const char *open = "<ArticleId IdType=\"pmc\">";
+  const char *close = "</ArticleId>";
+
+  const char *start = strstr(xml, open);
+  if (!start) {
+    return NULL;
+  }
+
+  start += strlen(open);
+
+  const char *end = strstr(start, close);
+  if (!end) {
+    return NULL;
+  }
+
+  size_t len = end - start;
+  char *pmcid = malloc(len + 1);
+  memcpy(pmcid, start, len);
+  pmcid[len] = '\0';
+  return pmcid;
 }
 
 static char *extract_authors(const char *xml) {
@@ -108,6 +123,41 @@ static char *extract_authors(const char *xml) {
   return result;
 }
 
+static char *extract_abstract(const char *xml) {
+  const char *p = xml;
+  char *result = NULL;
+  size_t size = 0;
+
+  while ((p = strstr(p, "<AbstractText")) != NULL) {
+    p = strchr(p, '>');
+    if (!p) {
+      break;
+    }
+    p++;
+
+    const char *end = strstr(p, "</AbstractText>");
+    if (!end) {
+      break;
+    }
+
+    size_t len = end - p;
+    char *tmp = realloc(result, size + len + 2);
+    if (!tmp) {
+      break;
+    }
+
+    result = tmp;
+    memcpy(result + size, p, len);
+    size += len;
+    result[size++] = ' ';
+    result[size] = '\0';
+
+    p = end + 1;
+  }
+
+  return result;
+}
+
 /* ============================
  * Parser principal
  * ============================ */
@@ -131,9 +181,10 @@ int pubmed_parse_efetch_xml(const char *xml, PubMedArticle **out_articles, int *
     PubMedArticle art = {0};
 
     art.title = extract_tag(block, "ArticleTitle");
-    art.abstract = extract_tag(block, "AbstractText");
+    art.abstract = extract_abstract(block);
     art.authors = extract_authors(block);
     art.doi = extract_doi(block);
+    art.pmcid = extract_pmcid(block);
 
     PubMedArticle *tmp = realloc(articles, sizeof(PubMedArticle) * (count + 1));
     if (!tmp) {

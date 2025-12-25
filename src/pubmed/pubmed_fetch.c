@@ -5,6 +5,9 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <errno.h>
+#include <curl/curl.h>
 
 void pubmed_free_pmids(char **pmids, int count) {
   for (int i = 0; i < count; i++) {
@@ -111,4 +114,25 @@ int pubmed_parse_idlist(const char *json, char ***out_pmids, int *out_count) {
   *out_pmids = pmids;
   *out_count = count;
   return 0;
+}
+
+int pubmed_download_pmc(const char *pmcid, const char *title, const char *out_dir) {
+  if (!pmcid || !title) {
+    return -1;
+  }
+
+  char safe_title[256];
+  utils_sanitize_filename(title, safe_title, sizeof(safe_title));
+
+  char url[512];
+  snprintf(url, sizeof(url),
+           "https://www.ncbi.nlm.nih.gov/pmc/articles/%s/?page=xml",
+           pmcid);
+
+  char path[512];
+  snprintf(path, sizeof(path),
+           "%s/%s.xml",
+           out_dir, safe_title);
+
+  return http_download_file(url, path);
 }

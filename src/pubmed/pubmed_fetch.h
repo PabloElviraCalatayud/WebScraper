@@ -11,4 +11,7 @@ void pubmed_free_articles(PubMedArticle *articles, int count);
 
 int pubmed_parse_idlist(const char *json, char ***out_pmids, int *out_count);
 
+int pubmed_download_pmc(const char *pmcid, const char *title, const char *out_dir);
+
+
 #endif
