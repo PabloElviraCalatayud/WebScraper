@@ -84,3 +84,26 @@
 | Volume                         | `[vi]`             | Volumen                                     |
 
 
+flowchart TD
+    A[Inicio] --> B[Leer argumentos CLI]
+    B --> C[Validar parámetros]
+    C --> D[Tokenizar query UQL]
+    D --> E[Para cada repositorio]
+    E --> F[Traducir UQL → PubMed]
+    F --> G[Para cada página]
+    G --> H[Construir URL ESearch]
+    H --> I[HTTP GET ESearch]
+    I --> J[Parsear PMIDs]
+    J --> K[Construir URL EFetch]
+    K --> L[HTTP GET EFetch]
+    L --> M[Parsear XML artículos]
+    M --> N[Escribir CSV]
+    N --> O{¿--download?}
+    O -->|Sí| P[Descargar XML PMC]
+    O -->|No| Q[Continuar]
+    P --> Q
+    Q --> R[CSV → JSON]
+    R --> S[Fin]
+
+
+
