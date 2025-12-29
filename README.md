@@ -3,7 +3,7 @@
 ## Campos relevantes
 
 | Elemento UQL    | Significado en UQL      | Sintaxis en PubMed | Ejemplo UQL                   | Ejemplo PubMed                      |
-| :--------------- | ----------------------- | ------------------ | ----------------------------- | ----------------------------------- :|
+| --------------- | ----------------------- | ------------------ | ----------------------------- | ----------------------------------- |
 | `tit:`          | Búsqueda en el título   | `[Title]`          | `tit:robot`                   | `robot[Title]`                      |
 | `abs:`          | Búsqueda en el abstract | `[Abstract]`       | `abs:vision`                  | `vision[Abstract]`                  |
 | *(sin prefijo)* | Búsqueda global         | `[Title/Abstract]` | `navigation`                  | `navigation[Title/Abstract]`        |
