@@ -1,3 +1,7 @@
+#Webscraper
+
+##Campos relevantes
+
 | Elemento UQL    | Significado en UQL      | Sintaxis en PubMed | Ejemplo UQL                   | Ejemplo PubMed                      |
 | --------------- | ----------------------- | ------------------ | ----------------------------- | ----------------------------------- |
 | `tit:`          | Búsqueda en el título   | `[Title]`          | `tit:robot`                   | `robot[Title]`                      |
@@ -6,6 +10,8 @@
 | `AND`           | Operador lógico AND     | `AND`              | `robot AND vision`            | `robot AND vision`                  |
 | `OR`            | Operador lógico OR      | `OR`               | `robot OR automata`           | `robot OR automata`                 |
 | `(` `)`         | Agrupación              | `(` `)`            | `(tit:robot OR tit:automata)` | `(robot[Title] OR automata[Title])` |
+
+##Todos los campos de PubMed
 
 | Campo                          | Tag                | Descripción                                 |
 | ------------------------------ | ------------------ | ------------------------------------------- |
