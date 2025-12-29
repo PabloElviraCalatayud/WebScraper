@@ -1,6 +1,6 @@
 # Webscraper
 
-##Campos relevantes
+## Campos relevantes
 
 | Elemento UQL    | Significado en UQL      | Sintaxis en PubMed | Ejemplo UQL                   | Ejemplo PubMed                      |
 | --------------- | ----------------------- | ------------------ | ----------------------------- | ----------------------------------- |
@@ -11,7 +11,7 @@
 | `OR`            | Operador lógico OR      | `OR`               | `robot OR automata`           | `robot OR automata`                 |
 | `(` `)`         | Agrupación              | `(` `)`            | `(tit:robot OR tit:automata)` | `(robot[Title] OR automata[Title])` |
 
-##Todos los campos de PubMed
+## Todos los campos de PubMed
 
 | Campo                          | Tag                | Descripción                                 |
 | ------------------------------ | ------------------ | ------------------------------------------- |
