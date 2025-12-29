@@ -16,10 +16,10 @@
 #include "csv_to_json.h"
 
 #define MIN_ARGC 4
-#define HELP "<query> <file-name.csv> <repo_1> <repo_N> [--download]"
+#define HELP "<query> <file-name.csv> <repo_1> <repo_N> [--pages N] [--download]"
 
 #define PUBMED_PAGE_SIZE 20
-#define PUBMED_PAGES     2
+#define DEFAULT_PUBMED_PAGES 2
 
 static char *build_pubmed_url(const char *pmid) {
   const char *base = "https://pubmed.ncbi.nlm.nih.gov/";
@@ -36,6 +36,7 @@ static char *build_pubmed_url(const char *pmid) {
 
 int main(int argc, char *argv[]) {
   int download_enabled = 0;
+  int pubmed_pages = DEFAULT_PUBMED_PAGES;
 
   if (argc < MIN_ARGC) {
     printf("Missing parameters: %s\n", HELP);
@@ -45,13 +46,20 @@ int main(int argc, char *argv[]) {
   for (int i = 3; i < argc; i++) {
     if (strcmp(argv[i], "--download") == 0) {
       download_enabled = 1;
+    } else if (strcmp(argv[i], "--pages") == 0 && i + 1 < argc) {
+      pubmed_pages = atoi(argv[i + 1]);
+      if (pubmed_pages <= 0) {
+        fprintf(stderr, "Invalid value for --pages\n");
+        return -2;
+      }
+      i++;
     }
   }
 
   FILE *fout = fopen(argv[2], "w");
   if (!fout) {
     perror("csv");
-    return -2;
+    return -3;
   }
 
   csv_write_header(fout);
@@ -59,11 +67,15 @@ int main(int argc, char *argv[]) {
   Token *tokens = tokenize(argv[1]);
   if (!tokens) {
     fclose(fout);
-    return -3;
+    return -4;
   }
 
   for (int i = 3; i < argc; i++) {
-    if (strcmp(argv[i], "--download") == 0) {
+    if (strcmp(argv[i], "--download") == 0 ||
+        strcmp(argv[i], "--pages") == 0) {
+      if (strcmp(argv[i], "--pages") == 0) {
+        i++;
+      }
       continue;
     }
 
@@ -75,7 +87,7 @@ int main(int argc, char *argv[]) {
     QueryNode *query = translate_uql_to_pubmed(tokens);
     char *query_str = query_to_string(query);
 
-    for (int page = 0; page < PUBMED_PAGES; page++) {
+    for (int page = 0; page < pubmed_pages; page++) {
       char *search_url = pubmed_build_search_url(
         query_str,
         page * PUBMED_PAGE_SIZE,
