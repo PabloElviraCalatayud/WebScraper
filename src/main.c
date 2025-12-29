@@ -19,7 +19,7 @@
 #define HELP "<query> <file-name.csv> <repo_1> <repo_N> [--download]"
 
 #define PUBMED_PAGE_SIZE 20
-#define PUBMED_PAGES     10
+#define PUBMED_PAGES     2
 
 static char *build_pubmed_url(const char *pmid) {
   const char *base = "https://pubmed.ncbi.nlm.nih.gov/";
@@ -120,10 +120,13 @@ int main(int argc, char *argv[]) {
 
         for (int j = 0; j < article_count; j++) {
 
-          if (!articles[j].doi && articles[j].pmid) {
+          if (
+            (!articles[j].doi || articles[j].doi[0] == '\0') &&
+            articles[j].pmid && articles[j].pmid[0] != '\0'
+          ) {
+            free(articles[j].doi);
             articles[j].doi = build_pubmed_url(articles[j].pmid);
           }
-
 
           csv_write_article(fout, "PubMed", &articles[j]);
 
