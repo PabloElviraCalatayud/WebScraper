@@ -16,7 +16,7 @@
 #include "csv_to_json.h"
 
 #define MIN_ARGC 4
-#define HELP "<query> <file-name.csv> <repo_1> <repo_N> [--pages N] [--download]"
+#define HELP "<query><file-name.csv> <repo_1> <repo_N> [--pages N] [--download] the query must be between quotation marks"
 
 #define PUBMED_PAGE_SIZE 20
 #define DEFAULT_PUBMED_PAGES 2
