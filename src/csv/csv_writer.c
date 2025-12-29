@@ -2,12 +2,13 @@
 #include "pubmed_types.h"
 #include <string.h>
 
-/* Escapa comillas dobles para CSV */
 static void csv_escape_and_write(FILE *f, const char *text) {
   fputc('"', f);
 
   for (const char *p = text; *p; p++) {
-    if (*p == '"') {
+    if (*p == '\n' || *p == '\r') {
+      fputc(' ', f);
+    } else if (*p == '"') {
       fputc('"', f);
       fputc('"', f);
     } else {
@@ -19,13 +20,10 @@ static void csv_escape_and_write(FILE *f, const char *text) {
 }
 
 void csv_write_header(FILE *f) {
-  fprintf(
-    f,
-    "Repository,Title,Authors,Abstract,DOI\n"
-  );
+  fprintf(f, "Repository,Title,Authors,Abstract,DOI\n");
 }
 
-void csv_write_article(FILE *f,const char *repository,const PubMedArticle *article) {
+void csv_write_article(FILE *f, const char *repository, const PubMedArticle *article) {
   csv_escape_and_write(f, repository);
   fputc(',', f);
 

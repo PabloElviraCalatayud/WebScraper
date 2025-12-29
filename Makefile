@@ -1,6 +1,10 @@
-CC      := gcc
-CFLAGS  := -Wall -Wextra -std=c11
-LIBS    := -lcurl -lxml2
+CC := gcc
+
+CFLAGS := -Wall -Wextra -std=c11 \
+  $(shell pkg-config --cflags libxml-2.0)
+
+LIBS := -lcurl \
+  $(shell pkg-config --libs libxml-2.0)
 
 INCLUDES := \
   -Isrc \

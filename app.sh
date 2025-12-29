@@ -34,9 +34,9 @@ if [ "$MISSING" -eq 1 ]; then
 fi
 
 if [ ! -x "./app" ]; then
-  echo "🔨 Compilando aplicación..."
+  echo "Compilando aplicación..."
   make
 fi
 
-echo "🚀 Ejecutando aplicación"
+echo "Ejecutando aplicación"
 exec ./app "$@"

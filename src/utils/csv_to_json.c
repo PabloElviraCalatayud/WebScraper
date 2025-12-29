@@ -2,12 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* ============================
- * CSV helpers
- * ============================ */
-
 static char *read_field(char **line) {
-  if (**line == '\0') {
+  if (**line == '\0' || **line == '\n') {
     return NULL;
   }
 
@@ -19,7 +15,10 @@ static char *read_field(char **line) {
     (*line)++;
     start = *line;
 
-    while (**line && !(**line == '"' && (*(*line + 1) == ',' || *(*line + 1) == '\0'))) {
+    while (**line) {
+      if (**line == '"' && (*(*line + 1) == ',' || *(*line + 1) == '\n' || *(*line + 1) == '\0')) {
+        break;
+      }
       (*line)++;
     }
 
@@ -36,7 +35,7 @@ static char *read_field(char **line) {
     }
   } else {
     start = *line;
-    while (**line && **line != ',') {
+    while (**line && **line != ',' && **line != '\n') {
       (*line)++;
     }
 
@@ -56,17 +55,25 @@ static char *read_field(char **line) {
 static void json_escape(FILE *out, const char *s) {
   fputc('"', out);
   for (; *s; s++) {
-    if (*s == '"' || *s == '\\') {
-      fputc('\\', out);
+    unsigned char c = (unsigned char)*s;
+    if (c == '"') {
+      fputs("\\\"", out);
+    } else if (c == '\\') {
+      fputs("\\\\", out);
+    } else if (c == '\n') {
+      fputs("\\n", out);
+    } else if (c == '\r') {
+      fputs("\\r", out);
+    } else if (c == '\t') {
+      fputs("\\t", out);
+    } else if (c < 0x20) {
+      fprintf(out, "\\u%04x", c);
+    } else {
+      fputc(c, out);
     }
-    fputc(*s, out);
   }
   fputc('"', out);
 }
-
-/* ============================
- * CSV → JSON
- * ============================ */
 
 int csv_to_json(const char *csv_path, const char *json_path) {
   FILE *in = fopen(csv_path, "r");
@@ -83,7 +90,6 @@ int csv_to_json(const char *csv_path, const char *json_path) {
   char line[16384];
   int first = 1;
 
-  /* skip header */
   if (!fgets(line, sizeof(line), in)) {
     fclose(in);
     fclose(out);

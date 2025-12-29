@@ -1,203 +1,294 @@
 #include "pubmed_xml_parser.h"
 #include "pubmed_types.h"
-#include "utils.h"
+
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 
-/* ============================
- * Helpers internos
- * ============================ */
-
-static char *extract_tag(const char *xml, const char *tag) {
-  char open[64];
-  char close[64];
-
-  snprintf(open, sizeof(open), "<%s>", tag);
-  snprintf(close, sizeof(close), "</%s>", tag);
-
-  const char *start = strstr(xml, open);
-  if (!start) {
+static char *str_dup(const char *s) {
+  if (!s) {
     return NULL;
   }
 
-  start += strlen(open);
-
-  const char *end = strstr(start, close);
-  if (!end) {
-    return NULL;
-  }
-
-  size_t len = end - start;
+  size_t len = strlen(s);
   char *out = malloc(len + 1);
-  memcpy(out, start, len);
+  if (!out) {
+    return NULL;
+  }
+
+  memcpy(out, s, len);
   out[len] = '\0';
   return out;
 }
 
-static char *extract_doi(const char *xml) {
-  const char *open = "<ArticleId IdType=\"doi\">";
-  const char *close = "</ArticleId>";
-
-  const char *start = strstr(xml, open);
-  if (!start) {
+static char *node_text(xmlNode *node) {
+  if (!node) {
     return NULL;
   }
 
-  start += strlen(open);
-
-  const char *end = strstr(start, close);
-  if (!end) {
+  xmlChar *content = xmlNodeGetContent(node);
+  if (!content) {
     return NULL;
   }
 
-  size_t len = end - start;
-  char *doi = malloc(len + 1);
-  memcpy(doi, start, len);
-  doi[len] = '\0';
-  return doi;
+  char *out = str_dup((const char *)content);
+  xmlFree(content);
+  return out;
 }
 
-static char *extract_pmcid(const char *xml) {
-  const char *open = "<ArticleId IdType=\"pmc\">";
-  const char *close = "</ArticleId>";
+static char *extract_title(xmlNode *article) {
+  for (xmlNode *n = article->children; n; n = n->next) {
+    if (n->type == XML_ELEMENT_NODE &&
+        strcmp((char *)n->name, "MedlineCitation") == 0) {
 
-  const char *start = strstr(xml, open);
-  if (!start) {
-    return NULL;
+      for (xmlNode *a = n->children; a; a = a->next) {
+        if (a->type == XML_ELEMENT_NODE &&
+            strcmp((char *)a->name, "Article") == 0) {
+
+          for (xmlNode *t = a->children; t; t = t->next) {
+            if (t->type == XML_ELEMENT_NODE &&
+                strcmp((char *)t->name, "ArticleTitle") == 0) {
+              return node_text(t);
+            }
+          }
+        }
+      }
+    }
   }
 
-  start += strlen(open);
-
-  const char *end = strstr(start, close);
-  if (!end) {
-    return NULL;
-  }
-
-  size_t len = end - start;
-  char *pmcid = malloc(len + 1);
-  memcpy(pmcid, start, len);
-  pmcid[len] = '\0';
-  return pmcid;
+  return NULL;
 }
 
-static char *extract_authors(const char *xml) {
-  const char *p = xml;
+static char *extract_abstract(xmlNode *article) {
+  for (xmlNode *n = article->children; n; n = n->next) {
+    if (n->type == XML_ELEMENT_NODE &&
+        strcmp((char *)n->name, "MedlineCitation") == 0) {
+
+      for (xmlNode *a = n->children; a; a = a->next) {
+        if (a->type == XML_ELEMENT_NODE &&
+            strcmp((char *)a->name, "Article") == 0) {
+
+          for (xmlNode *ab = a->children; ab; ab = ab->next) {
+            if (ab->type == XML_ELEMENT_NODE &&
+                strcmp((char *)ab->name, "Abstract") == 0) {
+
+              char *result = NULL;
+              size_t size = 0;
+
+              for (xmlNode *t = ab->children; t; t = t->next) {
+                if (t->type == XML_ELEMENT_NODE &&
+                    strcmp((char *)t->name, "AbstractText") == 0) {
+
+                  char *part = node_text(t);
+                  if (!part) {
+                    continue;
+                  }
+
+                  size_t len = strlen(part);
+                  char *tmp = realloc(result, size + len + 2);
+                  if (!tmp) {
+                    free(part);
+                    free(result);
+                    return NULL;
+                  }
+
+                  result = tmp;
+                  memcpy(result + size, part, len);
+                  size += len;
+                  result[size++] = ' ';
+                  result[size] = '\0';
+
+                  free(part);
+                }
+              }
+
+              return result;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return NULL;
+}
+
+static char *extract_authors(xmlNode *article) {
   char *result = NULL;
   size_t size = 0;
 
-  while ((p = strstr(p, "<Author>")) != NULL) {
-    char *last = extract_tag(p, "LastName");
-    char *first = extract_tag(p, "ForeName");
+  for (xmlNode *n = article->children; n; n = n->next) {
+    if (n->type == XML_ELEMENT_NODE &&
+        strcmp((char *)n->name, "MedlineCitation") == 0) {
 
-    if (last && first) {
-      size_t add = strlen(first) + strlen(last) + 3;
-      char *tmp = realloc(result, size + add + 1);
-      if (!tmp) {
-        free(last);
-        free(first);
-        break;
+      for (xmlNode *a = n->children; a; a = a->next) {
+        if (a->type == XML_ELEMENT_NODE &&
+            strcmp((char *)a->name, "Article") == 0) {
+
+          for (xmlNode *al = a->children; al; al = al->next) {
+            if (al->type == XML_ELEMENT_NODE &&
+                strcmp((char *)al->name, "AuthorList") == 0) {
+
+              for (xmlNode *au = al->children; au; au = au->next) {
+                if (au->type != XML_ELEMENT_NODE ||
+                    strcmp((char *)au->name, "Author") != 0) {
+                  continue;
+                }
+
+                char *first = NULL;
+                char *last = NULL;
+
+                for (xmlNode *c = au->children; c; c = c->next) {
+                  if (c->type != XML_ELEMENT_NODE) {
+                    continue;
+                  }
+
+                  if (strcmp((char *)c->name, "ForeName") == 0) {
+                    first = node_text(c);
+                  } else if (strcmp((char *)c->name, "LastName") == 0) {
+                    last = node_text(c);
+                  }
+                }
+
+                if (first && last) {
+                  size_t add = strlen(first) + strlen(last) + 3;
+                  char *tmp = realloc(result, size + add + 1);
+                  if (!tmp) {
+                    free(first);
+                    free(last);
+                    free(result);
+                    return NULL;
+                  }
+
+                  result = tmp;
+
+                  if (size > 0) {
+                    memcpy(result + size, "; ", 2);
+                    size += 2;
+                  }
+
+                  memcpy(result + size, first, strlen(first));
+                  size += strlen(first);
+                  result[size++] = ' ';
+                  memcpy(result + size, last, strlen(last));
+                  size += strlen(last);
+                  result[size] = '\0';
+                }
+
+                free(first);
+                free(last);
+              }
+            }
+          }
+        }
       }
-
-      result = tmp;
-
-      if (size > 0) {
-        strcat(result, "; ");
-        size += 2;
-      } else {
-        result[0] = '\0';
-      }
-
-      strcat(result, first);
-      strcat(result, " ");
-      strcat(result, last);
-      size += add;
     }
-
-    free(last);
-    free(first);
-    p++;
   }
 
   return result;
 }
 
-static char *extract_abstract(const char *xml) {
-  const char *p = xml;
-  char *result = NULL;
-  size_t size = 0;
+static char *extract_article_id(xmlNode *article, const char *type) {
+  for (xmlNode *n = article->children; n; n = n->next) {
+    if (n->type == XML_ELEMENT_NODE &&
+        strcmp((char *)n->name, "PubmedData") == 0) {
 
-  while ((p = strstr(p, "<AbstractText")) != NULL) {
-    p = strchr(p, '>');
-    if (!p) {
-      break;
+      for (xmlNode *l = n->children; l; l = l->next) {
+        if (l->type == XML_ELEMENT_NODE &&
+            strcmp((char *)l->name, "ArticleIdList") == 0) {
+
+          for (xmlNode *id = l->children; id; id = id->next) {
+            if (id->type != XML_ELEMENT_NODE ||
+                strcmp((char *)id->name, "ArticleId") != 0) {
+              continue;
+            }
+
+            xmlChar *attr = xmlGetProp(id, (xmlChar *)"IdType");
+            if (attr && strcmp((char *)attr, type) == 0) {
+              xmlFree(attr);
+              return node_text(id);
+            }
+
+            xmlFree(attr);
+          }
+        }
+      }
     }
-    p++;
-
-    const char *end = strstr(p, "</AbstractText>");
-    if (!end) {
-      break;
-    }
-
-    size_t len = end - p;
-    char *tmp = realloc(result, size + len + 2);
-    if (!tmp) {
-      break;
-    }
-
-    result = tmp;
-    memcpy(result + size, p, len);
-    size += len;
-    result[size++] = ' ';
-    result[size] = '\0';
-
-    p = end + 1;
   }
 
-  return result;
+  return NULL;
 }
 
-/* ============================
- * Parser principal
- * ============================ */
+static char *extract_pmid(xmlNode *article) {
+  for (xmlNode *n = article->children; n; n = n->next) {
+    if (n->type == XML_ELEMENT_NODE &&
+        strcmp((char *)n->name, "MedlineCitation") == 0) {
 
-int pubmed_parse_efetch_xml(const char *xml, PubMedArticle **out_articles, int *out_count) {
-  const char *p = xml;
-  int count = 0;
+      for (xmlNode *c = n->children; c; c = c->next) {
+        if (c->type == XML_ELEMENT_NODE &&
+            strcmp((char *)c->name, "PMID") == 0) {
+          return node_text(c);
+        }
+      }
+    }
+  }
+
+  return NULL;
+}
+
+int pubmed_parse_efetch_xml(const char *xml,
+                            PubMedArticle **out_articles,
+                            int *out_count) {
+  static int xml_initialized = 0;
+  if (!xml_initialized) {
+    xmlInitParser();
+    xml_initialized = 1;
+  }
+
+  xmlDoc *doc = xmlReadMemory(
+    xml,
+    strlen(xml),
+    NULL,
+    NULL,
+    XML_PARSE_NOERROR | XML_PARSE_NOWARNING
+  );
+
+  if (!doc) {
+    return -1;
+  }
+
+  xmlNode *root = xmlDocGetRootElement(doc);
   PubMedArticle *articles = NULL;
+  int count = 0;
 
-  while ((p = strstr(p, "<PubmedArticle>")) != NULL) {
-    const char *end = strstr(p, "</PubmedArticle>");
-    if (!end) {
-      break;
+  for (xmlNode *n = root->children; n; n = n->next) {
+    if (n->type != XML_ELEMENT_NODE ||
+        strcmp((char *)n->name, "PubmedArticle") != 0) {
+      continue;
     }
-
-    size_t len = end - p;
-    char *block = malloc(len + 1);
-    memcpy(block, p, len);
-    block[len] = '\0';
 
     PubMedArticle art = {0};
 
-    art.title = extract_tag(block, "ArticleTitle");
-    art.abstract = extract_abstract(block);
-    art.authors = extract_authors(block);
-    art.doi = extract_doi(block);
-    art.pmcid = extract_pmcid(block);
+    art.title = extract_title(n);
+    art.abstract = extract_abstract(n);
+    art.authors = extract_authors(n);
+    art.doi = extract_article_id(n, "doi");
+    art.pmcid = extract_article_id(n, "pmc");
+    art.pmid = extract_pmid(n);
 
-    PubMedArticle *tmp = realloc(articles, sizeof(PubMedArticle) * (count + 1));
+    PubMedArticle *tmp =
+      realloc(articles, sizeof(PubMedArticle) * (count + 1));
     if (!tmp) {
-      free(block);
       break;
     }
 
     articles = tmp;
     articles[count++] = art;
-
-    free(block);
-    p = end + 1;
   }
+
+  xmlFreeDoc(doc);
 
   *out_articles = articles;
   *out_count = count;

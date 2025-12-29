@@ -17,10 +17,22 @@
 
 #define MIN_ARGC 4
 #define HELP "<query> <file-name.csv> <repo_1> <repo_N> [--download]"
-#define SUPPORTED_REPOS "PubMed"
 
 #define PUBMED_PAGE_SIZE 20
-#define PUBMED_PAGES     2
+#define PUBMED_PAGES     10
+
+static char *build_pubmed_url(const char *pmid) {
+  const char *base = "https://pubmed.ncbi.nlm.nih.gov/";
+  size_t len = strlen(base) + strlen(pmid) + 2;
+
+  char *url = malloc(len);
+  if (!url) {
+    return NULL;
+  }
+
+  snprintf(url, len, "%s%s/", base, pmid);
+  return url;
+}
 
 int main(int argc, char *argv[]) {
   int download_enabled = 0;
@@ -64,39 +76,64 @@ int main(int argc, char *argv[]) {
     char *query_str = query_to_string(query);
 
     for (int page = 0; page < PUBMED_PAGES; page++) {
-      char *search_url =
-        pubmed_build_search_url(query_str,
-                                page * PUBMED_PAGE_SIZE,
-                                PUBMED_PAGE_SIZE);
+      char *search_url = pubmed_build_search_url(
+        query_str,
+        page * PUBMED_PAGE_SIZE,
+        PUBMED_PAGE_SIZE
+      );
 
-      HttpBuffer search_response;
-      http_get(search_url, &search_response);
+      HttpBuffer search_response = {0};
+      if (http_get(search_url, &search_response) != 0) {
+        free(search_url);
+        continue;
+      }
 
       char **pmids = NULL;
       int pmid_count = 0;
-      pubmed_parse_idlist(search_response.data, &pmids, &pmid_count);
+
+      if (pubmed_parse_idlist(search_response.data, &pmids, &pmid_count) != 0 ||
+          pmid_count == 0) {
+        http_buffer_free(&search_response);
+        free(search_url);
+        continue;
+      }
 
       char *efetch_url =
         pubmed_build_efetch_url((const char **)pmids, pmid_count);
 
-      HttpBuffer efetch_response;
-      http_get(efetch_url, &efetch_response);
+      HttpBuffer efetch_response = {0};
+      if (http_get(efetch_url, &efetch_response) != 0) {
+        pubmed_free_pmids(pmids, pmid_count);
+        http_buffer_free(&search_response);
+        free(search_url);
+        free(efetch_url);
+        continue;
+      }
 
       PubMedArticle *articles = NULL;
       int article_count = 0;
 
-      pubmed_parse_efetch_xml(efetch_response.data,
-                              &articles,
-                              &article_count);
+      if (pubmed_parse_efetch_xml(
+            efetch_response.data,
+            &articles,
+            &article_count) == 0) {
 
-      for (int j = 0; j < article_count; j++) {
-        csv_write_article(fout, "PubMed", &articles[j]);
+        for (int j = 0; j < article_count; j++) {
 
-        if (download_enabled && articles[j].pmcid) {
-          pubmed_download_pmc(
-            articles[j].pmcid,
-            articles[j].title,
-            "downloads/PubMed");
+          if (!articles[j].doi && articles[j].pmid) {
+            articles[j].doi = build_pubmed_url(articles[j].pmid);
+          }
+
+
+          csv_write_article(fout, "PubMed", &articles[j]);
+
+          if (download_enabled && articles[j].pmcid) {
+            pubmed_download_pmc(
+              articles[j].pmcid,
+              articles[j].title,
+              "downloads/PubMed"
+            );
+          }
         }
       }
 

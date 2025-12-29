@@ -10,7 +10,8 @@
         "${workspaceFolder}/src/utils",
         "${workspaceFolder}/src/pubmed",
         "${workspaceFolder}/src/csv",
-        "${workspaceFolder}/tests/unity/src"
+        "${workspaceFolder}/tests/unity/src",
+        "/usr/include/libxml2"
       ],
       "defines": [],
       "compilerPath": "/usr/bin/gcc",
